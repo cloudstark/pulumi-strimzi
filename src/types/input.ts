@@ -41,6 +41,13 @@ export namespace kafka {
        * Configuration of the Entity Operator
        */
       entityOperator?: pulumi.Input<EntityOperator>;
+
+      /**
+       * Configuration of the Kafka Exporter. Kafka Exporter can
+       * provide additional metrics, for example lag of consumer
+       * group at topic/partition.
+       */
+      kafkaExporter?: pulumi.Input<KafkaExporter>;
     }
 
     export interface KafkaArgs {
@@ -74,6 +81,12 @@ export namespace kafka {
        * Configures listeners of Kafka brokers.
        */
       listeners: pulumi.Input<Listeners>;
+      /**
+       * The Prometheus JMX Exporter configuration.
+       * See https://github.com/prometheus/jmx_exporter
+       * for details of the structure of this configuration.
+       */
+      metrics?: pulumi.Input<any>;
     }
 
     export type KafkaStorageType = pulumi.Input<'ephemeral' | 'persistent-claim' | 'jbod'>;
@@ -116,6 +129,12 @@ export namespace kafka {
        * Storage configuration (disk). Cannot be updated.
        */
       storage: pulumi.Input<ZookeeperStorage>;
+      /**
+       * The Prometheus JMX Exporter configuration.
+       * See https://github.com/prometheus/jmx_exporter
+       * for details of the structure of this configuration.
+       */
+      metrics?: pulumi.Input<any>;
     }
 
     export type ZookeeperStorageType = pulumi.Input<'ephemeral' | 'persistent-claim'>;
@@ -153,6 +172,20 @@ export namespace kafka {
     }
 
     export interface UserOperator {
+
+    }
+
+    export interface KafkaExporter {
+      /**
+       * Regular expression to specify which consumer groups
+       * to collect. Default value is `.*`.
+       */
+      groupRegex?: pulumi.Input<string>;
+      /**
+       * Regular expression to specify which topics to collect.
+       * Default value is `.*`.
+       */
+      topicRegex?: pulumi.Input<string>;
 
     }
 

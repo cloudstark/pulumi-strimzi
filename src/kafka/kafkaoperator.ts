@@ -19,4 +19,5 @@ export class KafkaOperator extends pulumi.ComponentResource {
     }, childOpts);
 
   }
+
 }

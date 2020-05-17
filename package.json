@@ -1,5 +1,5 @@
 {
-  "name": "@cloudstark/pulumi-strimzi",
+  "name": "@cloudstark.solutions/pulumi-strimzi",
   "version": "0.0.0-development",
   "main": "bin/index.js",
   "types": "bin/index.d.ts",
