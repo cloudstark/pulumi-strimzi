@@ -1,5 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
+import {core, policy, meta} from "@pulumi/kubernetes/types/input";
 
 export namespace kafka {
 
@@ -23,46 +24,42 @@ export namespace kafka {
 
   export namespace v1beta1 {
 
-    export interface KafkaClusterArgs {
+    export interface KafkaArgs {
       metadata?: k8s.apiextensions.CustomResourceArgs['metadata'];
-      spec: pulumi.Input<ClusterArgs>;
+      spec: pulumi.Input<KafkaSpec>;
     }
 
-    export interface ClusterArgs {
+    export interface KafkaSpec {
       /**
        * Configuration of the Kafka cluster.
        */
-      kafka: pulumi.Input<KafkaArgs>
+      kafka: pulumi.Input<KafkaClusterSpec>
       /**
        * Configuration of the ZooKeeper cluster.
        */
-      zookeeper: pulumi.Input<ZookeeperArgs>
+      zookeeper: pulumi.Input<ZookeeperClusterSpec>
       /**
        * Configuration of the Entity Operator
        */
-      entityOperator?: pulumi.Input<EntityOperator>;
+      entityOperator?: pulumi.Input<EntityOperatorSpec>;
       /**
        * Configuration of the Kafka Exporter. Kafka Exporter can
        * provide additional metrics, for example lag of consumer
        * group at topic/partition.
        */
-      kafkaExporter?: pulumi.Input<KafkaExporter>;
+      kafkaExporter?: pulumi.Input<KafkaExporterSpec>;
+      /**
+       * Configuration for Cruise Control deployment. Deploys a
+       * Cruise Control instance when specified.
+       */
+      cruiseControl?: pulumi.Input<CruiseControlSpec>;
     }
 
-    export interface KafkaArgs {
+    export interface KafkaClusterSpec {
       /**
-       * The number of pods in the cluster.
+       * The pod's affinity rules.
        */
-      replicas: pulumi.Input<number>;
-      /**
-       * The docker image for the pods. The default value depends
-       * on the configured `Kafka.spec.kafka.version`.
-       */
-      image?: pulumi.Input<string>;
-      /**
-       * Storage configuration (disk). Cannot be updated.
-       */
-      storage: pulumi.Input<KafkaStorage>;
+      affinity?: pulumi.Input<core.v1.Affinity>;
       /**
        * 'The kafka broker config. Properties with the following
        * prefixes cannot be set: listeners, advertised., broker., listener.,
@@ -77,9 +74,26 @@ export namespace kafka {
        */
       config?: pulumi.Input<{ [key: string]: pulumi.Input<AttributeValue> }>
       /**
+       * The docker image for the pods. The default value depends
+       * on the configured `Kafka.spec.kafka.version`.
+       */
+      image?: pulumi.Input<string>;
+      /**
+       * JVM Options for pods
+       */
+      jvmOptions?: pulumi.Input<JvmOptions>;
+      /**
+       * Pod liveness checking.
+       */
+      livenessProbe?: pulumi.Input<Probe>;
+      /**
+       * Pod readiness checking.
+       */
+      readinessProbe?: pulumi.Input<Probe>;
+      /**
        * Configures listeners of Kafka brokers.
        */
-      listeners: pulumi.Input<Listeners>;
+      listeners: pulumi.Input<KafkaListeners>;
       /**
        * The Prometheus JMX Exporter configuration.
        * See https://github.com/prometheus/jmx_exporter
@@ -87,15 +101,27 @@ export namespace kafka {
        */
       metrics?: pulumi.Input<any>;
       /**
+       * The number of pods in the cluster.
+       */
+      replicas: pulumi.Input<number>;
+      /**
        * CPU and memory resources to reserve.
        */
-      resources?: pulumi.Input<Resources>
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
+      /**
+       * Storage configuration (disk). Cannot be updated.
+       */
+      storage: pulumi.Input<KafkaStorage>;
       /**
        * Template for Kafka cluster resources. The template
        * allows users to specify how are the `StatefulSet`, `Pods` and
        * `Services` generated.
        */
-      template?: pulumi.Input<KafkaClusterResourceTemplate>;
+      template?: pulumi.Input<KafkaClusterTemplate>;
+      /**
+       * TLS sidecar configuration.
+       */
+      tlsSidecar?: pulumi.Input<TlsSidecar>;
       /**
        * The kafka broker version. Defaults to {DefaultKafkaVersion}.
        * Consult the user documentation to understand the process required
@@ -103,6 +129,50 @@ export namespace kafka {
        */
       version?: pulumi.Input<string>;
     }
+
+    export interface JvmOptions {
+      /**
+       * -Xmx option to to the JVM
+       */
+      '-Xmx'?: pulumi.Input<string>;
+      /**
+       * -Xms option to to the JVM
+       */
+      '-Xms'?: pulumi.Input<string>;
+      /**
+       * -server option to to the JVM
+       */
+      '-server'?: pulumi.Input<boolean>;
+    }
+
+    export interface Sidecar {
+      /**
+       * The docker image for the container.
+       */
+      image?: pulumi.Input<string>;
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
+    }
+
+    export interface TlsSidecar extends Sidecar {
+      /**
+       * The log level for the TLS sidecar. Default value
+       * is `notice`.
+       */
+      logLevel?: pulumi.Input<TlsSidecarLogLevel>;
+      /**
+       * Pod liveness checking.
+       */
+      livenessProbe?: pulumi.Input<Probe>;
+      /**
+       * Pod readiness checking.
+       */
+      readinessProbe?: pulumi.Input<Probe>;
+    }
+
+    export type TlsSidecarLogLevel = pulumi.Input<'emerg' | 'alert' | 'crit' | 'err' | 'warning' | 'notice' | 'info' | 'debug'>
 
     export type KafkaStorageType = pulumi.Input<'ephemeral' | 'persistent-claim' | 'jbod'>;
 
@@ -128,7 +198,7 @@ export namespace kafka {
       deleteClaim?: pulumi.Input<boolean>
     }
 
-    export interface Listeners {
+    export interface KafkaListeners {
       /**
        * Configures plain listener on port 9092.
        */
@@ -152,11 +222,39 @@ export namespace kafka {
     export interface ExternalListener {
 
     }
-    export interface KafkaClusterResourceTemplate {
+
+    export interface KafkaClusterTemplate {
       /**
        * Template for Kafka `Pods`.
        */
       pod?: pulumi.Input<PodTemplate>;
+    }
+
+    export interface Probe {
+      /**
+       * Minimum consecutive failures for the probe to be considered
+       * failed after having succeeded. Defaults to 3. Minimum value is 1.
+       */
+      failureThreshold?: pulumi.Input<number>;
+      /**
+       * The initial delay before first the health is first checked.
+       */
+      initialDelaySeconds?: pulumi.Input<number>;
+      /**
+       * How often (in seconds) to perform the probe. Default
+       * to 10 seconds. Minimum value is 1.
+       */
+      periodSeconds?: pulumi.Input<number>;
+      /**
+       * Minimum consecutive successes for the probe to
+       * be considered successful after having failed. Defaults to
+       * 1. Must be 1 for liveness. Minimum value is 1.
+       */
+      successThreshold?: pulumi.Input<number>;
+      /**
+       * The timeout for each attempted health check.
+       */
+      timeoutSeconds?: pulumi.Input<number>;
     }
 
     export interface PodTemplate {
@@ -182,12 +280,14 @@ export namespace kafka {
        * List of references to secrets in the same namespace
        * to use for pulling any of the images used by this Pod.
        */
-      imagePullSecrets?: pulumi.Input<Array<pulumi.Input<{
-        name: pulumi.Input<string>;
-      }>>>;
+      imagePullSecrets?: pulumi.Input<Array<pulumi.Input<core.v1.LocalObjectReference>>>;
     }
 
-    export interface ZookeeperArgs {
+    export interface ZookeeperClusterSpec {
+      /**
+       * The pod's affinity rules.
+       */
+      affinity?: pulumi.Input<core.v1.Affinity>;
       /**
        * The number of pods in the cluster.
        */
@@ -209,13 +309,17 @@ export namespace kafka {
       /**
        * CPU and memory resources to reserve.
        */
-      resources?: pulumi.Input<Resources>
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
       /**
        * Template for ZooKeeper cluster resources. The template
        * allows users to specify how are the `StatefulSet`, `Pods` and
        * `Services` generated.
        */
       template?: pulumi.Input<ZookeeperClusterResourceTemplate>;
+      /**
+       * TLS sidecar configuration.
+       */
+      tlsSidecar?: pulumi.Input<TlsSidecar>;
     }
 
     export type ZookeeperStorageType = pulumi.Input<'ephemeral' | 'persistent-claim'>;
@@ -241,40 +345,63 @@ export namespace kafka {
       deleteClaim?: pulumi.Input<boolean>
     }
 
-    export interface EntityOperator {
+    export interface EntityOperatorSpec {
+      /**
+       * The pod's affinity rules.
+       */
+      affinity?: pulumi.Input<core.v1.Affinity>;
+      /**
+       * TLS sidecar configuration.
+       */
+      tlsSidecar?: pulumi.Input<TlsSidecar>;
       /**
        * Configuration of the Topic Operator.
        */
-      topicOperator?: pulumi.Input<TopicOperator>;
+      topicOperator?: pulumi.Input<EntityTopicOperatorSpec>;
       /**
        * Configuration of the User Operator.
        */
-      userOperator?: pulumi.Input<UserOperator>;
+      userOperator?: pulumi.Input<EntityUserOperatorSpec>;
     }
 
-    export interface TopicOperator {
+    export interface EntityTopicOperatorSpec {
       /**
        * CPU and memory resources to reserve.
        */
-      resources?: pulumi.Input<Resources>
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
+      /**
+       * TLS sidecar configuration.
+       */
+      tlsSidecar?: pulumi.Input<TlsSidecar>;
       /**
        * The image to use for the Topic Operator.
        */
       image?: pulumi.Input<string>;
     }
 
-    export interface UserOperator {
+    export interface EntityUserOperatorSpec {
       /**
        * CPU and memory resources to reserve.
        */
-      resources?: pulumi.Input<Resources>
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
+      /**
+       * TLS sidecar configuration.
+       */
+      tlsSidecar?: pulumi.Input<TlsSidecar>;
       /**
        * The image to use for the User Operator.
        */
       image?: pulumi.Input<string>;
     }
 
-    export interface KafkaExporter {
+    export interface CruiseControlSpec {
+      /**
+       * The docker image for the pods.
+       */
+      image?: pulumi.Input<string>;
+    }
+
+    export interface KafkaExporterSpec {
       /**
        * The docker image for the pods.
        */
@@ -292,16 +419,11 @@ export namespace kafka {
       /**
        * CPU and memory resources to reserve.
        */
-      resources?: pulumi.Input<Resources>;
+      resources?: pulumi.Input<core.v1.ResourceRequirements>;
       /**
        * Customization of deployment templates and pods.
        */
       template?: pulumi.Input<KafkaExporterResourceTemplate>;
-    }
-
-    export interface Resources {
-      limits?: pulumi.Input<any>;
-      requests?: pulumi.Input<any>;
     }
 
     export interface ZookeeperClusterResourceTemplate {
