@@ -6,16 +6,16 @@ import {input} from '../types';
 export class KafkaOperator extends pulumi.ComponentResource {
 
   constructor(name: string, args: input.kafka.KafkaOperatorArgs, opts?: pulumi.ComponentResourceOptions) {
-    super('cloudstark:k8s:KafkaOperator', name, args, opts);
+    super('cloudstark:k8s:KafkaOperator', name, {}, opts);
 
     const childOpts = {...opts, parent: this};
 
     const operatorChart = new k8s.helm.v2.Chart(name, {
-      repo: "strimzi",
-      chart: "strimzi-kafka-operator",
+      repo: args.repo,
+      chart: args.chart,
       version: args.version,
       namespace: args.namespace,
-      ...args.values
+      values: args.values
     }, childOpts);
 
   }

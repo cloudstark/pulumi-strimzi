@@ -1,6 +1,6 @@
 {
   "name": "@cloudstark.solutions/pulumi-strimzi",
-  "version": "0.0.0-development",
+  "version": "0.0.9-development",
   "main": "bin/index.js",
   "types": "bin/index.d.ts",
   "repository": {

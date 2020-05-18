@@ -11,9 +11,7 @@ export class KafkaTopic extends k8s.apiextensions.CustomResource {
       apiVersion: "kafka.strimzi.io/v1beta1",
       kind: "KafkaTopic",
       metadata: metadata,
-      spec: {
-        ...args.spec
-      }
+      spec: args.spec
     };
     super(name, resourceArgs, opts);
   }

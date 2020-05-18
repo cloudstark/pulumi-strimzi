@@ -10,7 +10,7 @@ export class Kafka extends k8s.apiextensions.CustomResource {
     const resourceArgs: k8s.apiextensions.CustomResourceArgs = {
       apiVersion: "kafka.strimzi.io/v1beta1",
       kind: "Kafka",
-      ...args
+      args
     };
     super(name, resourceArgs, opts);
   }

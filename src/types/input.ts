@@ -8,7 +8,7 @@ export namespace kafka {
     chart: pulumi.Input<string>;
     version: pulumi.Input<string>;
     namespace?: pulumi.Input<string>;
-    values?: pulumi.Input<any>;
+    values?: pulumi.Inputs;
   }
 
   // export const defaults = (args: KafkaOperatorArgs): KafkaOperatorArgs => {
@@ -41,7 +41,6 @@ export namespace kafka {
        * Configuration of the Entity Operator
        */
       entityOperator?: pulumi.Input<EntityOperator>;
-
       /**
        * Configuration of the Kafka Exporter. Kafka Exporter can
        * provide additional metrics, for example lag of consumer
@@ -87,6 +86,22 @@ export namespace kafka {
        * for details of the structure of this configuration.
        */
       metrics?: pulumi.Input<any>;
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<Resources>
+      /**
+       * Template for Kafka cluster resources. The template
+       * allows users to specify how are the `StatefulSet`, `Pods` and
+       * `Services` generated.
+       */
+      template?: pulumi.Input<KafkaClusterResourceTemplate>;
+      /**
+       * The kafka broker version. Defaults to {DefaultKafkaVersion}.
+       * Consult the user documentation to understand the process required
+       * to upgrade or downgrade the version.
+       */
+      version?: pulumi.Input<string>;
     }
 
     export type KafkaStorageType = pulumi.Input<'ephemeral' | 'persistent-claim' | 'jbod'>;
@@ -97,6 +112,10 @@ export namespace kafka {
        * or 'jbod'.
        */
       type: pulumi.Input<KafkaStorageType>;
+      /**
+       * The storage class to use for dynamic volume allocation.
+       */
+      class?: pulumi.Input<string>;
       /**
        * When type=persistent-claim, defines the size of the persistent
        * volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
@@ -110,8 +129,18 @@ export namespace kafka {
     }
 
     export interface Listeners {
+      /**
+       * Configures plain listener on port 9092.
+       */
       plain?: pulumi.Input<PlainListener>;
+      /**
+       * Configures TLS listener on port 9093.
+       */
       tls?: pulumi.Input<TlsListener>;
+      /**
+       * Configures external listener on port 9094.
+       */
+      external?: pulumi.Input<ExternalListener>;
     }
 
     export interface PlainListener {
@@ -120,11 +149,53 @@ export namespace kafka {
     export interface TlsListener {
     }
 
+    export interface ExternalListener {
+
+    }
+    export interface KafkaClusterResourceTemplate {
+      /**
+       * Template for Kafka `Pods`.
+       */
+      pod?: pulumi.Input<PodTemplate>;
+    }
+
+    export interface PodTemplate {
+      /**
+       * Metadata applied to the resource.
+       */
+      metadata?: pulumi.Input<{
+        /**
+         * Labels which should be added to the resource
+         * template. Can be applied to different resources such
+         * as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+         */
+        labels?: pulumi.Input<any>;
+        /**
+         * Annotations which should be added to the
+         * resource template. Can be applied to different resources
+         * such as `StatefulSets`, `Deployments`, `Pods`, and
+         * `Services`.
+         */
+        annotations?: pulumi.Input<any>;
+      }>;
+      /**
+       * List of references to secrets in the same namespace
+       * to use for pulling any of the images used by this Pod.
+       */
+      imagePullSecrets?: pulumi.Input<Array<pulumi.Input<{
+        name: pulumi.Input<string>;
+      }>>>;
+    }
+
     export interface ZookeeperArgs {
       /**
        * The number of pods in the cluster.
        */
       replicas: pulumi.Input<number>;
+      /**
+       * The docker image for the pods.
+       */
+      image?: pulumi.Input<string>;
       /**
        * Storage configuration (disk). Cannot be updated.
        */
@@ -135,6 +206,16 @@ export namespace kafka {
        * for details of the structure of this configuration.
        */
       metrics?: pulumi.Input<any>;
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<Resources>
+      /**
+       * Template for ZooKeeper cluster resources. The template
+       * allows users to specify how are the `StatefulSet`, `Pods` and
+       * `Services` generated.
+       */
+      template?: pulumi.Input<ZookeeperClusterResourceTemplate>;
     }
 
     export type ZookeeperStorageType = pulumi.Input<'ephemeral' | 'persistent-claim'>;
@@ -144,6 +225,10 @@ export namespace kafka {
        * Storage type, must be either 'ephemeral' or 'persistent-claim'.
        */
       type: pulumi.Input<ZookeeperStorageType>;
+      /**
+       * The storage class to use for dynamic volume allocation.
+       */
+      class?: pulumi.Input<string>;
       /**
        * When type=persistent-claim, defines the size of the persistent
        * volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
@@ -168,14 +253,32 @@ export namespace kafka {
     }
 
     export interface TopicOperator {
-
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<Resources>
+      /**
+       * The image to use for the Topic Operator.
+       */
+      image?: pulumi.Input<string>;
     }
 
     export interface UserOperator {
-
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<Resources>
+      /**
+       * The image to use for the User Operator.
+       */
+      image?: pulumi.Input<string>;
     }
 
     export interface KafkaExporter {
+      /**
+       * The docker image for the pods.
+       */
+      image?: pulumi.Input<string>;
       /**
        * Regular expression to specify which consumer groups
        * to collect. Default value is `.*`.
@@ -186,7 +289,33 @@ export namespace kafka {
        * Default value is `.*`.
        */
       topicRegex?: pulumi.Input<string>;
+      /**
+       * CPU and memory resources to reserve.
+       */
+      resources?: pulumi.Input<Resources>;
+      /**
+       * Customization of deployment templates and pods.
+       */
+      template?: pulumi.Input<KafkaExporterResourceTemplate>;
+    }
 
+    export interface Resources {
+      limits?: pulumi.Input<any>;
+      requests?: pulumi.Input<any>;
+    }
+
+    export interface ZookeeperClusterResourceTemplate {
+      /**
+       * Template for ZooKeeper `Pods`.
+       */
+      pod?: pulumi.Input<PodTemplate>;
+    }
+
+    export interface KafkaExporterResourceTemplate {
+      /**
+       * Template for Kafka Exporter `Pods`.
+       */
+      pod?: pulumi.Input<PodTemplate>;
     }
 
     export interface KafkaTopicArgs {
@@ -195,7 +324,10 @@ export namespace kafka {
       spec: pulumi.Input<TopicArgs>;
     }
 
-    export type AttributeValue = pulumi.Input<string> | pulumi.Input<boolean> | pulumi.Input<number>;
+    export type AttributeValue =
+      pulumi.Input<string>
+      | pulumi.Input<boolean>
+      | pulumi.Input<number>;
 
     export interface TopicArgs {
       /**
