@@ -1,3 +1,7 @@
+[![npm install][install-img]][npm-url]
+
+<br>
+
 ### Installing
 
 This package is available in JavaScript/TypeScript for use with Node.js.  Install it using either `npm`:
@@ -96,3 +100,8 @@ const topic = new strimzi.kafka.v1beta1.KafkaTopic("temperature", {
   dependsOn: [operator]
 });
 ```
+## License
+
+MIT License (Expat). See [LICENSE](LICENSE) for details.
+
+[npm-url]: https://www.npmjs.com/package/@cloudstark.solutions/pulumi-strimzi

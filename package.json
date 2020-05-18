@@ -7,8 +7,17 @@
     "type": "git",
     "url": "https://github.com/cloudstark/pulumi-strimzi.git"
   },
+  "keywords": [
+    "strimzi",
+    "kafka",
+    "operator",
+    "pulumi"
+  ],
   "author": "Lars Martin",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cloudstark/pulumi-strimzi/issues"
+  },
   "private": false,
   "dependencies": {
     "@pulumi/kubernetes": "^2.2.0",
