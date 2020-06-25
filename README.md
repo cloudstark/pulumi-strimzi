@@ -1,3 +1,8 @@
+## Strimzi Resource Provider for Pulumi
+
+The [Strimzi](https://github.com/strimzi/strimzi-kafka-operator) resource provider for Pulumi lets you
+manage Kafka cluster resources in your cloud programs.
+
 ### Installing
 
 This package is available in JavaScript/TypeScript for use with Node.js. Install it using either `npm`:
